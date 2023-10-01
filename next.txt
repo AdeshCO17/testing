@@ -1,14 +1,69 @@
 
-successfully
+const express = require('express');
+const axios = require('axios');
+const _ = require('lodash');
 
-coder
+const app = express();
+const PORT = 3000;
 
-new code
 
-using other branch change will not affect the master branch
+app.use('/api/blog-stats', (req, res, next) => {
+  axios.get('https://intent-kit-16.hasura.app/api/rest/blogs', {
+    headers: {
+      'x-hasura-admin-secret': '32qR4KmXOIpsGPQKMqEJHGJS27G5s7HdSKO3gdtQd2kv5e852SiYwWNfxkZOBuQ6'
+    }
+  })
+    .then(response => {
+      const blogData = response.data;
 
-nothing done
+      // Calculate analytics using Lodash
+      const totalBlogs = blogData.length;
+      const longestBlog = _.maxBy(blogData, 'title.length');
+      const blogsWithPrivacy = _.filter(blogData, blog => _.includes(blog.title.toLowerCase(), 'privacy'));
+      const uniqueBlogTitles = _.uniqBy(blogData, 'title');
 
-giving you pull request so please check
+      
+      res.json({
+        totalBlogs,
+        longestBlog: longestBlog.title,
+        blogsWithPrivacy: blogsWithPrivacy.length,
+        uniqueBlogTitles: uniqueBlogTitles.map(blog => blog.title)
+      });
+    })
+    .catch(error => {
+      console.error('Error fetching data from the blog API:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    });
+});
+
+app.get('/api/blog-search', (req, res) => {
+  const query = req.query.query.toLowerCase();
+  // Implement search functionality (original implementation)
+  axios.get('https://intent-kit-16.hasura.app/api/rest/blogs', {
+    headers: {
+      'x-hasura-admin-secret': '32qR4KmXOIpsGPQKMqEJHGJS27G5s7HdSKO3gdtQd2kv5e852SiYwWNfxkZOBuQ6'
+    }
+  })
+    .then(response => {
+      const blogData = response.data;
+      const searchResults = _.filter(blogData, blog => _.includes(blog.title.toLowerCase(), query));
+      res.json(searchResults);
+    })
+    .catch(error => {
+      console.error('Error fetching data from the blog API:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    });
+});
+
+
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Internal Server Error' });
+});
+
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
 
 
